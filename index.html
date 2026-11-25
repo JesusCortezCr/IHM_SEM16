@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal de asesorías académicas</title>
+  <style>
+    :root {
+      --azul: #0b1f5c;
+      --azul-claro: #1b3a8a;
+      --turquesa: #14b8a6;
+      --turquesa-osc: #0f766e;
+      --texto: #1b2433;
+      --suave: #5b6577;
+      --fondo: #f3f6fb;
+      --borde: #d5dbe7;
+      --error: #b42318;
+      --ok: #0f6a3f;
+      --radio: 10px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      color: var(--texto);
+      background: var(--fondo);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    [hidden] { display: none !important; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+    .saltar {
+      position: absolute; left: -999px; top: 0;
+      background: #fff; color: var(--azul); padding: .5rem 1rem; z-index: 50; font-weight: 600;
+    }
+    .saltar:focus { left: 0; }
+    :focus-visible { outline: 3px solid var(--azul-claro); outline-offset: 2px; }
+
+    /* ---------- Encabezado ---------- */
+    header.cabecera {
+      background: var(--azul); color: #fff;
+      padding: 1.1rem 1.25rem;
+      position: relative; overflow: hidden;
+    }
+    header.cabecera::after {
+      content: ""; position: absolute; top: 0; right: -40px; bottom: 0; width: 120px;
+      background: var(--turquesa); transform: skewX(-20deg); opacity: .9;
+    }
+    .contenedor { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+    .cabecera .contenedor {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem;
+      padding-right: 5rem;
+    }
+    .cabecera h1 { margin: 0; font-size: clamp(1.25rem, 3.5vw, 1.8rem); line-height: 1.2; }
+    .cabecera p { margin: .15rem 0 0; color: #dbe6ff; font-size: .95rem; }
+    .usuario { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .usuario-chip { display: flex; flex-direction: column; line-height: 1.25; text-align: right; }
+    .usuario-chip strong { font-size: .98rem; }
+    .usuario-chip span { font-size: .82rem; color: #dbe6ff; }
+    @media (max-width: 600px) {
+      header.cabecera::after { width: 40px; right: -20px; }
+      .cabecera .contenedor { padding-right: 1.5rem; }
+      .usuario-chip { text-align: left; }
+    }
+
+    /* ---------- Navegación ---------- */
+    nav.menu { background: #fff; border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 20; }
+    nav.menu ul {
+      list-style: none; margin: 0 auto; padding: 0 1.25rem; max-width: 1100px;
+      display: flex; gap: .25rem; overflow-x: auto; scrollbar-width: thin;
+    }
+    nav.menu button {
+      background: none; color: var(--suave); border: 0; border-bottom: 3px solid transparent;
+      border-radius: 0; padding: .85rem .9rem; font-weight: 600; white-space: nowrap; min-height: 48px;
+    }
+    nav.menu button:hover { color: var(--azul); background: #f3f6fb; }
+    nav.menu button[aria-current="page"] { color: var(--azul); border-bottom-color: var(--turquesa-osc); }
+    .contador {
+      display: inline-block; min-width: 1.4em; padding: 0 .4em; margin-left: .35rem;
+      border-radius: 999px; background: #b42318; color: #fff; font-size: .75rem; line-height: 1.5; text-align: center;
+    }
+
+    main { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    main:focus { outline: none; }
+    section.vista > h2 { font-size: 1.35rem; color: var(--azul); margin: 0 0 .25rem; }
+    section.vista > h2:focus { outline: none; }
+    .intro { margin: 0 0 1.25rem; color: var(--suave); }
+    h3 { color: var(--azul); }
+
+    /* ---------- Paneles, tarjetas ---------- */
+    .panel {
+      background: #fff; border: 1px solid var(--borde); border-radius: var(--radio);
+      padding: 1.25rem; box-shadow: 0 1px 3px rgba(11, 31, 92, .06);
+    }
+    .panel + .panel, .bloque + .bloque { margin-top: 1.5rem; }
+    .panel > h3:first-child, .bloque > h3:first-child { margin-top: 0; }
+    .rejilla {
+      display: grid; gap: 1rem; list-style: none; margin: 0; padding: 0;
+      grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+    }
+    .dos-columnas {
+      display: grid; gap: 1.5rem; align-items: start;
+      grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+    }
+    .tarjeta {
+      background: #fff; border: 1px solid var(--borde); border-top: 4px solid var(--turquesa);
+      border-radius: var(--radio); padding: 1rem; box-shadow: 0 1px 3px rgba(11, 31, 92, .08);
+      display: flex; flex-direction: column; gap: .35rem;
+    }
+    .tarjeta h3, .tarjeta h4 { margin: 0; font-size: 1.05rem; color: var(--azul); }
+    .tarjeta p { margin: 0; color: var(--suave); font-size: .93rem; }
+    .tarjeta strong { color: var(--texto); }
+    .tarjeta .acciones-tarjeta { margin-top: auto; padding-top: .6rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+    .etiqueta {
+      display: inline-block; font-size: .78rem; font-weight: 600; padding: .1rem .5rem;
+      border-radius: 999px; background: #eef3ff; color: var(--azul-claro); margin-right: .25rem;
+    }
+    .vacio {
+      padding: 1.25rem; text-align: center; color: var(--suave); list-style: none;
+      background: #fff; border: 1px dashed #b9c2d3; border-radius: var(--radio);
+    }
+
+    /* ---------- Formularios ---------- */
+    .campos {
+      display: grid; gap: 1rem 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    }
+    .campo { display: flex; flex-direction: column; min-width: 0; }
+    .campo.ancho { grid-column: 1 / -1; }
+    label, legend { font-weight: 600; font-size: .92rem; margin-bottom: .3rem; }
+    .req { color: var(--error); }
+    .pista { font-size: .82rem; color: var(--suave); margin: .2rem 0 0; }
+    input, select, textarea {
+      font: inherit; font-size: max(1rem, 16px);
+      padding: .6rem .7rem; min-height: 44px; width: 100%;
+      border: 1px solid #8893a7; border-radius: 6px; background: #fff; color: var(--texto);
+      transition: border-color .2s, box-shadow .2s, background-color .2s;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    select:disabled, input:disabled { background: #eef0f4; color: #6b7487; cursor: not-allowed; }
+    [aria-invalid="true"] { border-color: var(--error) !important; border-width: 2px !important; }
+    .error { color: var(--error); font-size: .85rem; min-height: 1.2em; margin: .25rem 0 0; }
+    .error.ok { color: var(--ok); font-weight: 600; }
+
+    fieldset.campo { border: 0; padding: 0; margin: 0; }
+    fieldset.campo legend { padding: 0; }
+    .opciones { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .opcion {
+      flex: 1 1 140px; display: flex; align-items: center; gap: .55rem;
+      border: 1px solid #8893a7; border-radius: 6px; padding: .55rem .75rem; min-height: 44px;
+      font-weight: 500; margin: 0; cursor: pointer; background: #fff;
+    }
+    .opcion input { width: 1.15rem; height: 1.15rem; min-height: 0; margin: 0; accent-color: var(--turquesa-osc); flex: none; }
+    .opcion:has(input:checked) { border: 2px solid var(--turquesa-osc); background: #ecfaf7; }
+    .opcion:has(input:disabled) { opacity: .55; cursor: not-allowed; background: #f2f4f8; }
+    .opcion small { display: block; color: var(--suave); font-size: .78rem; font-weight: 400; }
+    fieldset.con-error .opcion { border-color: var(--error); }
+
+    .con-boton { display: flex; gap: .5rem; }
+    .con-boton input { flex: 1; min-width: 0; }
+
+    /* Correo: verde / rojo en tiempo real */
+    input[data-correo] {
+      padding-right: 2.6rem;
+      background-repeat: no-repeat; background-position: right .75rem center; background-size: 1.2rem;
+    }
+    input.valido {
+      border: 2px solid var(--ok); background-color: #f0faf4;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6a3f' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E");
+    }
+    input.invalido {
+      border: 2px solid var(--error); background-color: #fff5f4;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b42318' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+    }
+    input.valido:focus-visible { outline-color: var(--ok); }
+    input.invalido:focus-visible { outline-color: var(--error); }
+
+    kbd {
+      font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #fff; border: 1px solid #8893a7; border-bottom-width: 2px;
+      border-radius: 4px; padding: .1rem .35rem; white-space: nowrap;
+    }
+
+    /* Botones */
+    button {
+      font: inherit; font-weight: 600; cursor: pointer;
+      border-radius: 6px; padding: .6rem 1.2rem; min-height: 44px;
+      border: 1px solid transparent;
+    }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .primario { background: var(--turquesa-osc); color: #fff; }
+    .primario:hover:not(:disabled) { background: #0b5c55; }
+    .secundario { background: #fff; color: var(--azul); border-color: #8893a7; }
+    .secundario:hover:not(:disabled) { background: #eef3ff; }
+    .peligro { background: var(--error); color: #fff; }
+    .peligro:hover { background: #8f1c13; }
+    .claro { background: transparent; color: #fff; border-color: rgba(255,255,255,.7); }
+    .claro:hover { background: rgba(255,255,255,.12); }
+    .claro:focus-visible { outline-color: #fff; }
+    .pequeno { padding: .35rem .8rem; min-height: 40px; font-size: .9rem; }
+    .acciones { margin-top: 1rem; display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; }
+
+    .mensaje {
+      margin-top: 1rem; padding: .9rem 1rem; border-radius: 8px;
+      background: #e6f6ee; border: 1px solid #9bd4b5; color: var(--ok); font-weight: 600;
+    }
+    .mensaje.fallo { background: #fdecea; border-color: #f0aaa3; color: var(--error); }
+    .mensaje:focus { outline: 3px solid var(--azul-claro); outline-offset: 2px; }
+    .mensaje button { margin-top: .5rem; display: block; }
+    .resumen {
+      margin-top: 1rem; padding: .75rem 1rem; border-radius: 8px; background: #f6f8fc;
+      border: 1px solid var(--borde); font-size: .93rem;
+    }
+    .resumen:empty { display: none; }
+
+    /* ---------- Login ---------- */
+    .login-grid {
+      display: grid; gap: 1.5rem; align-items: start;
+      grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+      max-width: 960px; margin: 0 auto;
+    }
+    .login-grid .panel h2 { margin-top: 0; color: var(--azul); font-size: 1.3rem; }
+    .login-grid .panel h2:focus { outline: none; }
+    #form-login .campo + .campo { margin-top: .9rem; }
+    #form-login .primario { width: 100%; margin-top: .75rem; }
+    .cuentas { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+    .cuenta {
+      display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+      border: 1px solid var(--borde); border-radius: 8px; padding: .65rem .8rem;
+    }
+    .cuenta-datos { min-width: 0; }
+    .cuenta-datos strong { display: block; }
+    .cuenta-datos > span { font-size: .85rem; color: var(--suave); word-break: break-all; }
+    .rol-alumno { background: #e8efff; color: var(--azul-claro); }
+    .rol-asesor { background: #e3f6f3; color: #0b5c55; }
+    .nota-demo { font-size: .85rem; color: var(--suave); margin: .9rem 0 0; }
+    .nota-demo code { background: #eef0f4; padding: 0 .3rem; border-radius: 4px; }
+
+    /* ---------- Estados ---------- */
+    .estado {
+      display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap;
+      padding: .12rem .55rem; border-radius: 999px; font-size: .82rem; font-weight: 600; border: 1px solid;
+    }
+    .e-pendiente { background: #fff6e0; color: #7a4b00; border-color: #f0c96a; }
+    .e-aceptada { background: #e8efff; color: #1b3a8a; border-color: #a9bdf0; }
+    .e-completada { background: #e6f6ee; color: #0f6a3f; border-color: #9bd4b5; }
+    .e-rechazada, .e-ausente { background: #fdecea; color: #b42318; border-color: #f0aaa3; }
+    .e-cancelada { background: #eef0f4; color: #4a5466; border-color: #cfd5e0; }
+
+    /* ---------- Historial ---------- */
+    .segmentos {
+      display: inline-flex; flex-wrap: wrap; gap: .25rem; border: 0; margin: 0 0 1rem; padding: .25rem;
+      background: #e6ebf3; border-radius: 10px; max-width: 100%;
+    }
+    .segmentos label { margin: 0; font-weight: 600; font-size: .9rem; cursor: pointer; }
+    .segmentos input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .segmentos label > span {
+      display: inline-flex; align-items: center; min-height: 40px; padding: 0 .9rem; border-radius: 8px; color: var(--suave);
+    }
+    .segmentos input:checked + span { background: #fff; color: var(--azul); box-shadow: 0 1px 3px rgba(11,31,92,.15); }
+    .segmentos input:focus-visible + span { outline: 3px solid var(--azul-claro); outline-offset: 1px; }
+    .cuenta-seg { font-weight: 400; margin-left: .25rem; }
+    .historial { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+    .h-item {
+      background: #fff; border: 1px solid var(--borde); border-radius: var(--radio);
+      padding: .75rem .9rem; display: grid; grid-template-columns: auto 1fr auto; gap: .25rem 1rem; align-items: center;
+    }
+    .h-fecha {
+      width: 3.2rem; text-align: center; background: #eef3ff; color: var(--azul-claro); border-radius: 8px;
+      padding: .3rem 0; font-size: .75rem; font-weight: 600; text-transform: uppercase; line-height: 1.1;
+    }
+    .h-fecha span { display: block; font-size: 1.3rem; font-weight: 700; color: var(--azul); }
+    .h-info { min-width: 0; display: flex; flex-direction: column; }
+    .h-info > span { color: var(--suave); font-size: .88rem; }
+    .h-info > span::first-letter { text-transform: uppercase; }
+    .h-estado { display: flex; align-items: center; gap: .6rem; }
+    .h-nota { font-weight: 700; font-size: 1.1rem; color: var(--azul); }
+    .h-nota small { font-size: .8rem; color: var(--suave); font-weight: 600; }
+    .h-detalle { grid-column: 1 / -1; font-size: .9rem; }
+    .h-detalle summary { cursor: pointer; color: var(--azul-claro); font-weight: 600; width: max-content; min-height: 32px; display: flex; align-items: center; }
+    .h-detalle dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem .9rem; margin: .4rem 0 .6rem; }
+    .h-detalle dt { color: var(--suave); font-weight: 600; }
+    .h-detalle dd { margin: 0; }
+    @media (max-width: 520px) {
+      .h-item { grid-template-columns: auto 1fr; }
+      .h-estado { grid-column: 2; }
+      .h-detalle dl { grid-template-columns: 1fr; gap: 0; }
+      .h-detalle dd { margin-bottom: .4rem; }
+    }
+
+    /* ---------- Filtros ---------- */
+    .filtros { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 1rem; }
+    .filtros .campo { flex: 1 1 200px; }
+
+    /* ---------- Progreso ---------- */
+    .tiles {
+      display: grid; gap: 1rem; margin-bottom: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+    }
+    .tile { background: #fff; border: 1px solid var(--borde); border-radius: var(--radio); padding: 1rem; }
+    .tile .valor { font-size: 2rem; font-weight: 700; color: var(--azul); line-height: 1.1; display: block; }
+    .tile .valor small { font-size: 1rem; color: var(--suave); font-weight: 600; }
+    .tile .rotulo { color: var(--suave); font-size: .9rem; }
+    .tile .rotulo small { color: var(--texto); font-weight: 600; }
+    .areas-progreso { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+    .area-fila { display: grid; gap: .35rem; }
+    .area-cabecera { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: .95rem; }
+    .area-cabecera span { color: var(--suave); }
+    progress {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 12px;
+      border: 0; border-radius: 999px; background: #e6ebf3; overflow: hidden;
+    }
+    progress::-webkit-progress-bar { background: #e6ebf3; border-radius: 999px; }
+    progress::-webkit-progress-value { background: var(--turquesa-osc); border-radius: 999px; }
+    progress::-moz-progress-bar { background: var(--turquesa-osc); border-radius: 999px; }
+    .nivel { font-size: .85rem; font-weight: 600; }
+    .nivel-alto { color: var(--ok); }
+    .nivel-medio { color: #7a4b00; }
+    .nivel-bajo { color: var(--error); }
+    .nivel-nada { color: var(--suave); font-weight: 400; }
+    .resultados { list-style: none; margin: 0; padding: 0; }
+    .resultados li { padding: .75rem 0; border-top: 1px solid var(--borde); display: grid; grid-template-columns: 1fr auto; gap: .25rem 1rem; }
+    .resultados li:first-child { border-top: 0; padding-top: 0; }
+    .resultados small { color: var(--suave); }
+    .resultados .nota { font-size: 1.25rem; font-weight: 700; color: var(--azul); align-self: center; }
+    .resultados p { margin: 0; color: var(--suave); font-size: .9rem; grid-column: 1 / -1; }
+
+    /* ---------- Asesor ---------- */
+    .horarios { list-style: none; margin: .5rem 0 0; padding: 0; }
+    .horarios li {
+      display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap;
+      padding: .45rem 0; border-top: 1px solid var(--borde); font-size: .92rem;
+    }
+    .solicitud-card { border-top-color: #f0c96a; }
+    .solicitud-card.aceptada { border-top-color: var(--azul-claro); }
+    .solicitud-card .tema { background: #f6f8fc; border-radius: 6px; padding: .5rem .65rem; color: var(--texto); font-size: .9rem; }
+
+    /* ---------- Diálogos ---------- */
+    dialog {
+      border: 0; border-radius: 12px; padding: 0; width: min(520px, calc(100% - 2rem));
+      max-height: calc(100% - 2rem); box-shadow: 0 20px 50px rgba(11, 31, 92, .3); color: var(--texto);
+    }
+    dialog::backdrop { background: rgba(11, 31, 92, .45); }
+    dialog .dlg-cuerpo { padding: 1.25rem; }
+    dialog h2 { margin: 0 0 .5rem; color: var(--azul); font-size: 1.2rem; }
+    dialog .campo + .campo, dialog fieldset + .campo { margin-top: .9rem; }
+
+    /* ---------- Aviso flotante ---------- */
+    #aviso {
+      position: fixed; left: 50%; bottom: 1rem; transform: translate(-50%, 200%);
+      background: var(--azul); color: #fff; padding: .75rem 1.1rem; border-radius: 8px;
+      max-width: calc(100% - 2rem); width: max-content; z-index: 60; font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25); transition: transform .25s ease;
+    }
+    #aviso.visible { transform: translate(-50%, 0); }
+
+    footer { text-align: center; color: var(--suave); font-size: .85rem; padding: 1rem; }
+    footer button { background: none; border: 0; color: var(--azul-claro); text-decoration: underline; padding: .25rem; min-height: 0; font-weight: 500; }
+
+    @media (max-width: 480px) {
+      main { padding: 1rem .75rem 2rem; }
+      header.cabecera { padding: 1rem .75rem; }
+      nav.menu ul { padding: 0 .5rem; }
+      .panel { padding: 1rem; }
+      .acciones > button { flex: 1 1 100%; }
+      .tile .valor { font-size: 1.7rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+    }
+    @media (forced-colors: active) {
+      input.valido, input.invalido { border-style: double; border-width: 3px; }
+      nav.menu button[aria-current="page"] { border-bottom-color: Highlight; }
+    }
+  </style>
+</head>
+<body>
+  <a class="saltar" href="#principal">Saltar al contenido principal</a>
+
+  <header class="cabecera">
+    <div class="contenedor">
+      <div>
+        <h1>Portal de asesorías académicas</h1>
+        <p id="subtitulo">Inicia sesión para gestionar tus asesorías.</p>
+      </div>
+      <div class="usuario" id="barra-usuario" hidden>
+        <div class="usuario-chip">
+          <strong id="usuario-nombre"></strong>
+          <span id="usuario-rol"></span>
+        </div>
+        <button type="button" class="claro pequeno" id="btn-salir">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Secciones del portal" hidden>
+    <ul id="menu-lista"></ul>
+  </nav>
+
+  <main id="principal" tabindex="-1">
+
+    <!-- ================= LOGIN ================= -->
+    <section class="vista" id="vista-login" data-vista="login" aria-labelledby="t-login">
+      <div class="login-grid">
+        <div class="panel">
+          <h2 id="t-login" tabindex="-1">Iniciar sesión</h2>
+          <p class="intro">Ingresa con tu correo institucional y contraseña.</p>
+          <form id="form-login" novalidate data-teclado>
+            <div class="campo">
+              <label for="login-correo">Correo electrónico <span class="req" aria-hidden="true">*</span></label>
+              <input type="email" id="login-correo" data-correo placeholder="tu@uni.edu.pe" autocomplete="username"
+                     inputmode="email" autocapitalize="off" spellcheck="false" required aria-describedby="err-login-correo">
+              <p class="error" id="err-login-correo" aria-live="polite"></p>
+            </div>
+            <div class="campo">
+              <label for="login-clave">Contraseña <span class="req" aria-hidden="true">*</span></label>
+              <div class="con-boton">
+                <input type="password" id="login-clave" autocomplete="current-password" required aria-describedby="err-login-clave">
+                <button type="button" class="secundario" id="ver-clave" aria-controls="login-clave" aria-pressed="false">Mostrar<span class="sr-only"> contraseña</span></button>
+              </div>
+              <p class="error" id="err-login-clave"></p>
+            </div>
+            <div id="login-error" class="mensaje fallo" role="alert" hidden></div>
+            <button type="submit" class="primario">Ingresar</button>
+          </form>
+        </div>
+
+        <aside class="panel" aria-labelledby="t-demo">
+          <h2 id="t-demo">Cuentas de demostración</h2>
+          <p class="intro">Los datos son simulados. Elige una cuenta para autocompletar el formulario.</p>
+          <ul class="cuentas" id="lista-cuentas"></ul>
+          <p class="nota-demo">Contraseñas: alumnos <code>alumno123</code> · asesores <code>asesor123</code></p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= ALUMNO: CURSOS ================= -->
+    <section class="vista" id="vista-cursos" data-vista="cursos" aria-labelledby="t-cursos" hidden>
+      <h2 id="t-cursos" tabindex="-1">Cursos disponibles</h2>
+      <p class="intro">Cursos y horarios creados por los asesores académicos. Elige uno para solicitar tu asesoría.</p>
+      <form class="filtros" id="form-filtro-cursos" novalidate data-teclado>
+        <div class="campo">
+          <label for="fc-area">Filtrar por área académica</label>
+          <select id="fc-area"></select>
+        </div>
+      </form>
+      <p class="sr-only" id="cursos-cuenta" aria-live="polite"></p>
+      <ul class="rejilla" id="lista-cursos"></ul>
+    </section>
+
+    <!-- ================= ALUMNO: NUEVA SOLICITUD ================= -->
+    <section class="vista" id="vista-solicitud" data-vista="solicitud" aria-labelledby="t-solicitud" hidden>
+      <h2 id="t-solicitud" tabindex="-1">Registrar solicitud de asesoría</h2>
+      <p class="intro">Elige el área, el curso, la modalidad y un horario disponible.</p>
+      <div class="panel">
+        <form id="form-solicitud" novalidate data-teclado>
+          <div class="campos">
+            <div class="campo">
+              <label for="sol-area">Área académica <span class="req" aria-hidden="true">*</span></label>
+              <select id="sol-area" required aria-describedby="err-sol-area"></select>
+              <p class="error" id="err-sol-area"></p>
+            </div>
+            <div class="campo">
+              <label for="sol-curso">Curso <span class="req" aria-hidden="true">*</span></label>
+              <select id="sol-curso" required disabled aria-describedby="pista-sol-curso err-sol-curso">
+                <option value="">Primero elige un área</option>
+              </select>
+              <p class="pista" id="pista-sol-curso">Solo aparecen los cursos del área elegida.</p>
+              <p class="error" id="err-sol-curso"></p>
+            </div>
+            <fieldset class="campo ancho" id="sol-modalidad" aria-describedby="err-sol-modalidad">
+              <legend>Modalidad <span class="req" aria-hidden="true">*</span></legend>
+              <div class="opciones">
+                <label class="opcion"><input type="radio" name="modalidad" value="presencial" disabled>
+                  <span>Presencial <small id="sol-lugar">Elige un curso</small></span></label>
+                <label class="opcion"><input type="radio" name="modalidad" value="virtual" disabled>
+                  <span>Virtual <small id="sol-enlace">Elige un curso</small></span></label>
+              </div>
+              <p class="error" id="err-sol-modalidad"></p>
+            </fieldset>
+            <div class="campo">
+              <label for="sol-fecha">Fecha disponible <span class="req" aria-hidden="true">*</span></label>
+              <select id="sol-fecha" required disabled aria-describedby="err-sol-fecha">
+                <option value="">Primero elige un curso</option>
+              </select>
+              <p class="error" id="err-sol-fecha"></p>
+            </div>
+            <div class="campo">
+              <label for="sol-horario">Horario disponible <span class="req" aria-hidden="true">*</span></label>
+              <select id="sol-horario" required disabled aria-describedby="err-sol-horario">
+                <option value="">Primero elige una fecha</option>
+              </select>
+              <p class="error" id="err-sol-horario"></p>
+            </div>
+            <div class="campo ancho">
+              <label for="sol-tema">Tema o duda a tratar <span class="req" aria-hidden="true">*</span></label>
+              <textarea id="sol-tema" maxlength="300" required aria-describedby="pista-sol-tema err-sol-tema"
+                        placeholder="Ej.: No entiendo la regla de la cadena en derivadas."></textarea>
+              <p class="pista" id="pista-sol-tema">Mínimo 10 caracteres. <kbd>Ctrl</kbd> + <kbd>Enter</kbd> envía la solicitud.</p>
+              <p class="error" id="err-sol-tema"></p>
+            </div>
+          </div>
+          <div class="resumen" id="sol-resumen" aria-live="polite"></div>
+          <div class="acciones">
+            <button type="reset" class="secundario">Limpiar</button>
+            <button type="submit" class="primario">Registrar solicitud</button>
+          </div>
+          <div id="sol-conf" class="mensaje" role="status" tabindex="-1" hidden></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ================= HISTORIAL (ambos roles) ================= -->
+    <section class="vista" id="vista-historial" data-vista="historial" aria-labelledby="t-historial" hidden>
+      <h2 id="t-historial" tabindex="-1">Historial de asesorías</h2>
+      <p class="intro" id="historial-intro"></p>
+      <form id="form-historial" novalidate data-teclado>
+        <fieldset class="segmentos">
+          <legend class="sr-only">Mostrar</legend>
+          <label><input type="radio" name="hist-ver" value="todas" checked> <span>Todas</span></label>
+          <label><input type="radio" name="hist-ver" value="proximas"> <span>Próximas</span></label>
+          <label><input type="radio" name="hist-ver" value="completadas"> <span>Completadas</span></label>
+          <label><input type="radio" name="hist-ver" value="otras"> <span>No realizadas</span></label>
+        </fieldset>
+      </form>
+      <ul class="historial" id="historial-contenido"></ul>
+    </section>
+
+    <!-- ================= ALUMNO: PROGRESO ================= -->
+    <section class="vista" id="vista-progreso" data-vista="progreso" aria-labelledby="t-progreso" hidden>
+      <h2 id="t-progreso" tabindex="-1">Mi progreso académico</h2>
+      <p class="intro">Resumen de tus asesorías completadas y de las notas de avance que registraron tus asesores (escala 0–20).</p>
+      <div id="progreso-contenido"></div>
+    </section>
+
+    <!-- ================= ASESOR: SOLICITUDES ================= -->
+    <section class="vista" id="vista-solicitudes" data-vista="solicitudes" aria-labelledby="t-solicitudes" hidden>
+      <h2 id="t-solicitudes" tabindex="-1">Solicitudes de alumnos</h2>
+      <p class="intro">Acepta o rechaza las solicitudes y registra el resultado de cada asesoría.</p>
+      <div id="solicitudes-contenido"></div>
+    </section>
+
+    <!-- ================= ASESOR: CURSOS Y HORARIOS ================= -->
+    <section class="vista" id="vista-gestion" data-vista="gestion" aria-labelledby="t-gestion" hidden>
+      <h2 id="t-gestion" tabindex="-1">Mis cursos y horarios</h2>
+      <p class="intro">Crea tus cursos y programa las fechas y horas en que los alumnos pueden pedir asesoría.</p>
+      <div class="dos-columnas">
+        <div class="panel">
+          <h3 id="t-nuevo-curso">Crear curso</h3>
+          <form id="form-curso" novalidate data-teclado aria-labelledby="t-nuevo-curso">
+            <div class="campo">
+              <label for="gc-area">Área académica <span class="req" aria-hidden="true">*</span></label>
+              <select id="gc-area" required aria-describedby="pista-gc-area err-gc-area"></select>
+              <p class="pista" id="pista-gc-area">Solo se muestran las áreas que tienes asignadas.</p>
+              <p class="error" id="err-gc-area"></p>
+            </div>
+            <div class="campo">
+              <label for="gc-nombre">Nombre del curso <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="gc-nombre" maxlength="60" placeholder="Ej.: Álgebra lineal" required aria-describedby="err-gc-nombre">
+              <p class="error" id="err-gc-nombre"></p>
+            </div>
+            <fieldset class="campo" id="gc-modalidades" aria-describedby="pista-gc-mod err-gc-modalidades">
+              <legend>Modalidades que ofreces <span class="req" aria-hidden="true">*</span></legend>
+              <div class="opciones">
+                <label class="opcion"><input type="checkbox" name="gc-mod" value="presencial" checked> Presencial</label>
+                <label class="opcion"><input type="checkbox" name="gc-mod" value="virtual"> Virtual</label>
+              </div>
+              <p class="pista" id="pista-gc-mod">Marca o desmarca con <kbd>Espacio</kbd>.</p>
+              <p class="error" id="err-gc-modalidades"></p>
+            </fieldset>
+            <div class="campo">
+              <label for="gc-lugar">Aula (presencial)</label>
+              <input type="text" id="gc-lugar" maxlength="60" placeholder="Ej.: Aula B-204" aria-describedby="err-gc-lugar">
+              <p class="error" id="err-gc-lugar"></p>
+            </div>
+            <div class="campo">
+              <label for="gc-enlace">Plataforma o enlace (virtual)</label>
+              <input type="text" id="gc-enlace" maxlength="80" placeholder="Ej.: Google Meet" aria-describedby="err-gc-enlace">
+              <p class="error" id="err-gc-enlace"></p>
+            </div>
+            <div class="acciones"><button type="submit" class="primario">Crear curso</button></div>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3 id="t-nuevo-horario">Programar fecha y hora</h3>
+          <form id="form-horario" novalidate data-teclado aria-labelledby="t-nuevo-horario" aria-describedby="pista-horario">
+            <p class="pista" id="pista-horario" style="margin:-.5rem 0 1rem">Cada horario tiene 3 cupos.</p>
+            <div class="campo">
+              <label for="gh-curso">Curso <span class="req" aria-hidden="true">*</span></label>
+              <select id="gh-curso" required aria-describedby="err-gh-curso"></select>
+              <p class="error" id="err-gh-curso"></p>
+            </div>
+            <div class="campos">
+              <div class="campo">
+                <label for="gh-fecha">Fecha <span class="req" aria-hidden="true">*</span></label>
+                <input type="date" id="gh-fecha" required aria-describedby="err-gh-fecha">
+                <p class="error" id="err-gh-fecha"></p>
+              </div>
+              <div class="campo">
+                <label for="gh-inicio">Hora <span class="req" aria-hidden="true">*</span></label>
+                <select id="gh-inicio" required aria-describedby="err-gh-inicio"></select>
+                <p class="error" id="err-gh-inicio"></p>
+              </div>
+            </div>
+            <fieldset class="campo" id="gh-duracion">
+              <legend>Duración</legend>
+              <div class="opciones">
+                <label class="opcion"><input type="radio" name="gh-dur" value="60" checked> 1 hora</label>
+                <label class="opcion"><input type="radio" name="gh-dur" value="90"> 1 h 30 min</label>
+                <label class="opcion"><input type="radio" name="gh-dur" value="120"> 2 horas</label>
+              </div>
+            </fieldset>
+            <div class="acciones"><button type="submit" class="primario">Programar horario</button></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="bloque" style="margin-top:2rem">
+        <h3 id="t-mis-cursos" tabindex="-1">Mis cursos</h3>
+        <ul class="rejilla" id="lista-mis-cursos"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Laboratorio IHM · Portal de asesorías académicas · Datos simulados guardados en este navegador ·
+    <button type="button" id="btn-reiniciar">Restablecer datos de demostración</button>
+  </footer>
+
+  <!-- Aviso flotante (lector de pantalla + visual) -->
+  <div id="aviso" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Diálogo de confirmación genérico -->
+  <dialog id="dlg-confirmar" aria-labelledby="dlg-confirmar-titulo" aria-describedby="dlg-confirmar-texto">
+    <form method="dialog" class="dlg-cuerpo">
+      <h2 id="dlg-confirmar-titulo"></h2>
+      <p id="dlg-confirmar-texto"></p>
+      <div class="acciones">
+        <button value="no" class="secundario">Cancelar</button>
+        <button value="si" class="peligro" id="dlg-confirmar-ok">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Diálogo: registrar resultado de una asesoría (asesor) -->
+  <dialog id="dlg-resultado" aria-labelledby="dlg-resultado-titulo">
+    <form id="form-resultado" class="dlg-cuerpo" novalidate data-teclado>
+      <h2 id="dlg-resultado-titulo">Registrar resultado</h2>
+      <p id="dlg-resultado-detalle" class="intro"></p>
+      <fieldset class="campo" id="res-asistencia">
+        <legend>Asistencia <span class="req" aria-hidden="true">*</span></legend>
+        <div class="opciones">
+          <label class="opcion"><input type="radio" name="asistencia" value="si" checked> Asistió</label>
+          <label class="opcion"><input type="radio" name="asistencia" value="no"> No asistió</label>
+        </div>
+      </fieldset>
+      <div class="campo">
+        <label for="res-nota">Nota de avance (0 a 20) <span class="req" aria-hidden="true">*</span></label>
+        <input type="number" id="res-nota" min="0" max="20" step="1" required aria-describedby="err-res-nota">
+        <p class="error" id="err-res-nota"></p>
+      </div>
+      <div class="campo">
+        <label for="res-comentario">Comentario para el alumno</label>
+        <textarea id="res-comentario" maxlength="300" placeholder="Fortalezas y qué debe reforzar."></textarea>
+      </div>
+      <div class="acciones">
+        <button type="button" class="secundario" id="res-cancelar">Cancelar</button>
+        <button type="submit" class="primario">Guardar resultado</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  (function () {
+    "use strict";
+
+    /* =====================================================================
+       1. DATOS SIMULADOS (se guardan en localStorage)
+       ===================================================================== */
+    var AREAS = ["Matemáticas", "Programación", "Redacción académica", "Física"];
+    var META_POR_AREA = 4;   // asesorías completadas sugeridas por área en el ciclo
+    var ROLES = { alumno: "Alumno", asesor: "Asesor académico" };
+    var MODALIDAD = { presencial: "Presencial", virtual: "Virtual" };
+    var ESTADOS = {
+      pendiente:  { t: "Pendiente",  i: "⏳" },
+      aceptada:   { t: "Aceptada",   i: "✓" },
+      completada: { t: "Completada", i: "★" },
+      rechazada:  { t: "Rechazada",  i: "✗" },
+      cancelada:  { t: "Cancelada",  i: "–" },
+      ausente:    { t: "No asistió", i: "!" }
+    };
+    var CLAVE_DATOS = "pa-datos-v3", CLAVE_SESION = "pa-sesion";
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+    function dia(n) { var d = new Date(); d.setDate(d.getDate() + n); return iso(d); }
+    function fechaLocal(s) { var p = s.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); }
+    function minutos(t) { var p = t.split(":"); return (+p[0]) * 60 + (+p[1]); }
+    function nuevoId(pre) { return pre + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+    var fmtFecha = new Intl.DateTimeFormat("es-PE", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+    var fmtFechaLarga = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" });
+    function fFecha(s) { return fmtFecha.format(fechaLocal(s)); }
+    function fFechaLarga(s) { return fmtFechaLarga.format(fechaLocal(s)); }
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    function semilla() {
+      var usuarios = [
+        { id: "a1", rol: "alumno", nombre: "Ana Torres",     correo: "ana.torres@uni.edu.pe",     clave: "alumno123", detalle: "Ing. de Sistemas · 4.º ciclo" },
+        { id: "a2", rol: "alumno", nombre: "Luis Ramos",     correo: "luis.ramos@uni.edu.pe",     clave: "alumno123", detalle: "Ing. Industrial · 2.º ciclo" },
+        { id: "p1", rol: "asesor", nombre: "Carlos Mendoza", correo: "carlos.mendoza@uni.edu.pe", clave: "asesor123", detalle: "Matemáticas y Física", areas: ["Matemáticas", "Física"] },
+        { id: "p2", rol: "asesor", nombre: "María Quispe",   correo: "maria.quispe@uni.edu.pe",   clave: "asesor123", detalle: "Programación y Redacción", areas: ["Programación", "Redacción académica"] }
+      ];
+      var cursos = [
+        { id: "c1", asesorId: "p1", area: "Matemáticas",         nombre: "Cálculo I",             modalidades: ["presencial", "virtual"], lugar: "Aula B-204",          enlace: "Google Meet" },
+        { id: "c2", asesorId: "p1", area: "Física",              nombre: "Física I: cinemática",  modalidades: ["presencial"],            lugar: "Laboratorio F-101",   enlace: "" },
+        { id: "c3", asesorId: "p2", area: "Programación",        nombre: "Fundamentos de Python", modalidades: ["presencial", "virtual"], lugar: "Lab. de cómputo C-3", enlace: "Zoom" },
+        { id: "c4", asesorId: "p2", area: "Redacción académica", nombre: "Informes y normas APA", modalidades: ["virtual"],               lugar: "",                    enlace: "Microsoft Teams" }
+      ];
+      var horarios = [];
+      function H(id, c, d, i, f, cupos) { horarios.push({ id: id, cursoId: c, fecha: dia(d), inicio: i, fin: f, cupos: cupos || 3 }); }
+      H("h1", "c1", -24, "10:00", "11:00"); H("h2", "c3", -17, "14:00", "15:00"); H("h3", "c1", -12, "10:00", "11:00");
+      H("h4", "c4", -8, "12:00", "13:00");  H("h5", "c3", -4, "14:00", "15:30");  H("h6", "c2", -10, "16:00", "17:00");
+      H("h7", "c1", 2, "10:00", "11:00");   H("h8", "c1", 4, "10:00", "11:00");   H("h9", "c1", 9, "17:00", "18:00");
+      H("h10", "c2", 3, "16:00", "17:00");  H("h11", "c2", 8, "16:00", "17:00");
+      H("h12", "c3", 1, "14:00", "15:00");  H("h13", "c3", 5, "14:00", "15:00");  H("h14", "c3", 7, "09:00", "10:30");
+      H("h15", "c4", 4, "12:00", "13:00");  H("h16", "c4", 11, "12:00", "13:00", 2);
+
+      var solicitudes = [];
+      function S(id, al, h, mod, tema, estado, nota, com) {
+        solicitudes.push({ id: id, alumnoId: al, horarioId: h, modalidad: mod, tema: tema, estado: estado,
+                           nota: nota == null ? null : nota, comentario: com || "" });
+      }
+      S("s1", "a1", "h1", "presencial", "Límites y continuidad", "completada", 13, "Repasar límites laterales y practicar más ejercicios.");
+      S("s2", "a1", "h2", "virtual", "Bucles y condicionales", "completada", 15, "Buen manejo de condicionales; reforzar bucles anidados.");
+      S("s3", "a1", "h3", "virtual", "Derivadas: regla de la cadena", "completada", 16, "Mejoró mucho respecto a la sesión anterior.");
+      S("s4", "a1", "h4", "virtual", "Estructura de un informe técnico", "completada", 14, "Cuidar el formato de las citas APA.");
+      S("s5", "a1", "h5", "presencial", "Funciones y listas", "completada", 17, "Excelente avance; lista para ver archivos.");
+      S("s6", "a1", "h7", "presencial", "Integrales por sustitución", "aceptada");
+      S("s7", "a1", "h15", "virtual", "Revisión de bibliografía para el informe final", "pendiente");
+      S("s8", "a2", "h6", "presencial", "Movimiento rectilíneo uniforme", "ausente", null, "El alumno no se presentó.");
+      S("s9", "a2", "h3", "presencial", "Derivadas básicas", "completada", 12, "Practicar reglas de derivación.");
+      S("s10", "a2", "h12", "virtual", "Instalación de Python y primeros programas", "pendiente");
+      S("s11", "a2", "h2", "virtual", "Variables y tipos de datos", "rechazada", null, "Cupo lleno; por favor elige otro horario.");
+      S("s12", "a2", "h10", "presencial", "Movimiento parabólico", "pendiente");
+
+      return { version: 3, usuarios: usuarios, cursos: cursos, horarios: horarios, solicitudes: solicitudes };
+    }
+
+    var db;
+    function cargar() {
+      try {
+        var d = JSON.parse(localStorage.getItem(CLAVE_DATOS));
+        if (d && d.version === 3) return d;
+      } catch (e) { /* datos dañados: se regeneran */ }
+      return semilla();
+    }
+    function guardar() { try { localStorage.setItem(CLAVE_DATOS, JSON.stringify(db)); } catch (e) { /* modo privado */ } }
+    db = cargar(); guardar();
+
+    function porId(lista, id) { for (var i = 0; i < lista.length; i++) if (lista[i].id === id) return lista[i]; return null; }
+    function usuario(id) { return porId(db.usuarios, id); }
+    function curso(id) { return porId(db.cursos, id); }
+    function horario(id) { return porId(db.horarios, id); }
+    function ocupados(hId) {
+      return db.solicitudes.filter(function (s) { return s.horarioId === hId && (s.estado === "pendiente" || s.estado === "aceptada"); }).length;
+    }
+    function esFuturo(h) {
+      var f = fechaLocal(h.fecha), m = minutos(h.inicio);
+      f.setHours(Math.floor(m / 60), m % 60, 0, 0);
+      return f > new Date();
+    }
+    function horariosDisponibles(cursoId, alumnoId) {
+      return db.horarios.filter(function (h) {
+        if (h.cursoId !== cursoId || !esFuturo(h) || ocupados(h.id) >= h.cupos) return false;
+        return !db.solicitudes.some(function (s) {
+          return s.horarioId === h.id && s.alumnoId === alumnoId && (s.estado === "pendiente" || s.estado === "aceptada");
+        });
+      }).sort(function (a, b) { return (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio); });
+    }
+    // Solicitud "enriquecida" con curso, horario y personas
+    function detalle(s) {
+      var h = horario(s.horarioId), c = h ? curso(h.cursoId) : null;
+      return { s: s, h: h, c: c, alumno: usuario(s.alumnoId), asesor: c ? usuario(c.asesorId) : null };
+    }
+
+    /* =====================================================================
+       2. UTILIDADES DE INTERFAZ
+       ===================================================================== */
+    var $ = function (id) { return document.getElementById(id); };
+    var temporizadorAviso;
+    function avisar(msg) {
+      var a = $("aviso");
+      a.textContent = "";
+      // pequeño retraso para que el lector de pantalla lo anuncie aunque el texto se repita
+      setTimeout(function () { a.textContent = msg; a.classList.add("visible"); }, 50);
+      clearTimeout(temporizadorAviso);
+      temporizadorAviso = setTimeout(function () { a.classList.remove("visible"); }, 4500);
+    }
+
+    function opcionesAreas(select, textoTodas) {
+      select.innerHTML = '<option value="">' + esc(textoTodas) + "</option>" +
+        AREAS.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + "</option>"; }).join("");
+    }
+
+    function badge(estado) {
+      var e = ESTADOS[estado];
+      return '<span class="estado e-' + estado + '"><span aria-hidden="true">' + e.i + "</span>" + e.t + "</span>";
+    }
+
+    // Confirmación accesible con <dialog> (Esc = cancelar)
+    function confirmar(titulo, texto, textoOk) {
+      return new Promise(function (resolver) {
+        var dlg = $("dlg-confirmar");
+        $("dlg-confirmar-titulo").textContent = titulo;
+        $("dlg-confirmar-texto").textContent = texto;
+        $("dlg-confirmar-ok").textContent = textoOk || "Confirmar";
+        dlg.returnValue = "";
+        dlg.addEventListener("close", function alCerrar() {
+          dlg.removeEventListener("close", alCerrar);
+          resolver(dlg.returnValue === "si");
+        });
+        dlg.showModal();
+      });
+    }
+
+    /* ---------- Errores de campos ---------- */
+    function marcar(id, mensaje) {
+      var el = $(id), err = $("err-" + id);
+      if (!el || !err) return;
+      if (el.hasAttribute("data-correo")) { pintarCorreo(el, mensaje, el.value.trim() !== ""); return; }
+      err.textContent = mensaje;
+      if (el.tagName === "FIELDSET") {
+        el.classList.toggle("con-error", !!mensaje);
+        el.querySelectorAll("input").forEach(function (i) {
+          if (mensaje) i.setAttribute("aria-invalid", "true"); else i.removeAttribute("aria-invalid");
+        });
+      } else if (mensaje) el.setAttribute("aria-invalid", "true");
+      else el.removeAttribute("aria-invalid");
+    }
+    // Aplica {id: mensaje}; devuelve el primer campo con error (o null)
+    function aplicarErrores(errores) {
+      var primero = null;
+      Object.keys(errores).forEach(function (id) {
+        marcar(id, errores[id]);
+        if (errores[id] && !primero) primero = $(id);
+      });
+      return primero;
+    }
+    function enfocarCampo(el) {
+      if (!el) return;
+      if (el.tagName === "FIELDSET") {
+        var r = el.querySelector("input:checked:not(:disabled)") || el.querySelector("input:not(:disabled)");
+        if (r) r.focus();
+      } else el.focus();
+    }
+    // Al corregir un campo con error, el mensaje se quita en vivo
+    document.addEventListener("input", limpiarEnVivo);
+    document.addEventListener("change", limpiarEnVivo);
+    function limpiarEnVivo(e) {
+      var t = e.target;
+      if (!t.form || t.hasAttribute("data-correo")) return;
+      var contenedor = t.closest("fieldset.campo") || t;
+      var err = contenedor.id && $("err-" + contenedor.id);
+      if (!err || !err.textContent) return;
+      var lleno = contenedor.tagName === "FIELDSET" ? !!contenedor.querySelector("input:checked") : String(t.value).trim() !== "";
+      if (lleno) marcar(contenedor.id, "");
+    }
+
+    /* =====================================================================
+       3. VALIDACIÓN DE CORREO EN TIEMPO REAL (verde / rojo)
+       ===================================================================== */
+    function revisarCorreo(c) {
+      if (!c) return "Escribe tu correo electrónico.";
+      if (/\s/.test(c)) return "El correo no puede tener espacios.";
+      var partes = c.split("@");
+      if (partes.length === 1) return "Falta la @, por ejemplo: tu@uni.edu.pe";
+      if (partes.length > 2) return "Solo puede haber una @.";
+      var usuarioC = partes[0], dominio = partes[1];
+      if (!usuarioC) return "Escribe algo antes de la @.";
+      if (!dominio) return "Falta el dominio después de la @ (ej. uni.edu.pe).";
+      if (dominio.indexOf(".") === -1) return "Falta la extensión del dominio (ej. .com, .edu, .pe).";
+      if (/\.\./.test(c) || /^\.|\.$/.test(usuarioC) || /^[.-]|[.-]$/.test(dominio))
+        return "Revisa los puntos: no pueden ir seguidos ni al inicio o final.";
+      if (!/^[A-Za-z0-9._%+-]+$/.test(usuarioC)) return "Hay caracteres no permitidos antes de la @.";
+      if (!/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(dominio)) return "La extensión debe tener al menos 2 letras (ej. .com).";
+      return "";
+    }
+    function setTexto(el, t) { if (el.textContent !== t) el.textContent = t; }
+    function pintarCorreo(input, mensaje, hayTexto) {
+      var msg = $("err-" + input.id);
+      input.classList.remove("valido", "invalido");
+      msg.classList.remove("ok");
+      if (!mensaje && hayTexto) {
+        input.classList.add("valido"); input.setAttribute("aria-invalid", "false");
+        msg.classList.add("ok"); setTexto(msg, "✓ Correo válido.");
+      } else if (mensaje) {
+        input.classList.add("invalido"); input.setAttribute("aria-invalid", "true");
+        setTexto(msg, "✗ " + mensaje);
+      } else {
+        input.removeAttribute("aria-invalid"); setTexto(msg, "");
+      }
+    }
+    document.querySelectorAll("input[data-correo]").forEach(function (input) {
+      input.addEventListener("input", function () {
+        var c = input.value.trim();
+        input.dataset.tocado = "1";
+        pintarCorreo(input, c ? revisarCorreo(c) : "", !!c);
+      });
+      input.addEventListener("blur", function () {
+        if (input.dataset.tocado) pintarCorreo(input, revisarCorreo(input.value.trim()), input.value.trim() !== "");
+      });
+    });
+
+    /* =====================================================================
+       4. NAVEGACIÓN CON TECLADO EN TODOS LOS FORMULARIOS [data-teclado]
+       ===================================================================== */
+    var TIPOS_FLECHAS_NAVEGAN = ["text", "email", "password", "search", "tel", "url", "checkbox", "submit"];
+
+    function camposNavegables(form) {
+      var vistos = {};
+      return Array.prototype.filter.call(
+        form.querySelectorAll("input, select, textarea, button[type=submit]"),
+        function (el) {
+          if (el.disabled || el.type === "hidden" || el.offsetParent === null) return false;
+          if (el.type === "radio") {               // un solo “paso” por grupo de radios
+            if (vistos[el.name]) return false;
+            vistos[el.name] = true;
+          }
+          return true;
+        });
+    }
+    function enfocar(el) {
+      if (el.type === "radio") {
+        var grupo = el.form.querySelectorAll('input[type=radio][name="' + el.name + '"]:not(:disabled)');
+        var elegido = Array.prototype.find.call(grupo, function (r) { return r.checked; }) || grupo[0];
+        elegido.focus();
+      } else {
+        el.focus();
+        if (el.type === "text" || el.type === "password") {
+          try { el.setSelectionRange(el.value.length, el.value.length); } catch (err) { /* no soportado */ }
+        }
+      }
+    }
+    function enviar(form) {
+      if (form.requestSubmit) form.requestSubmit();
+      else { var b = form.querySelector("button[type=submit]"); if (b) b.click(); }
+    }
+
+    document.addEventListener("keydown", function (e) {
+      var t = e.target, form = t.form;
+      if (!form || !form.hasAttribute("data-teclado") || e.altKey || e.isComposing) return;
+      var lista = camposNavegables(form);
+      var i = lista.findIndex(function (el) {
+        return el === t || (t.type === "radio" && el.type === "radio" && el.name === t.name);
+      });
+      if (i === -1) return;
+      var ultimo = lista[lista.length - 1];
+      var tieneEnviar = ultimo.type === "submit";
+      var idxUltimoCampo = tieneEnviar ? lista.length - 2 : lista.length - 1;
+      var esTextarea = t.tagName === "TEXTAREA";
+      var esBoton = t.type === "submit";
+
+      function mover(delta) {
+        var destino = lista[i + delta];
+        if (destino) enfocar(destino);
+      }
+
+      if (e.key === "Enter") {
+        if (esTextarea) {                       // Enter = salto de línea; Ctrl/Cmd+Enter envía
+          if ((e.ctrlKey || e.metaKey) && tieneEnviar) { e.preventDefault(); enviar(form); }
+          return;
+        }
+        if (esBoton || e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+        if (e.shiftKey) mover(-1);
+        else if (i >= idxUltimoCampo && tieneEnviar) enviar(form);
+        else mover(1);
+      } else if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        // Texto, casillas y botón: las flechas cambian de campo.
+        // Listas, fecha, hora, números, radios y textarea: flechas nativas para cambiar el valor.
+        if (esTextarea || TIPOS_FLECHAS_NAVEGAN.indexOf(t.type) === -1) return;
+        e.preventDefault();
+        mover(e.key === "ArrowDown" ? 1 : -1);
+      }
+    });
+
+    // Los formularios de filtros no se envían
+    ["form-filtro-cursos", "form-historial"].forEach(function (id) {
+      $(id).addEventListener("submit", function (e) { e.preventDefault(); });
+    });
+
+    /* =====================================================================
+       5. SESIÓN: INICIO Y CIERRE
+       ===================================================================== */
+    var actual = null;   // usuario con sesión iniciada
+
+    function renderCuentasDemo() {
+      $("lista-cuentas").innerHTML = db.usuarios.map(function (u) {
+        return '<li class="cuenta"><div class="cuenta-datos"><strong>' + esc(u.nombre) +
+          ' <span class="etiqueta rol-' + u.rol + '">' + ROLES[u.rol] + "</span></strong>" +
+          "<span>" + esc(u.correo) + "</span></div>" +
+          '<button type="button" class="secundario pequeno" data-demo="' + u.id + '">Usar cuenta<span class="sr-only"> de ' +
+          esc(u.nombre) + ", " + ROLES[u.rol] + "</span></button></li>";
+      }).join("");
+    }
+    $("lista-cuentas").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-demo]");
+      if (!b) return;
+      var u = usuario(b.dataset.demo);
+      var c = $("login-correo"), k = $("login-clave");
+      c.value = u.correo; c.dataset.tocado = "1";
+      pintarCorreo(c, revisarCorreo(u.correo), true);
+      k.value = u.clave; marcar("login-clave", "");
+      $("login-error").hidden = true;
+      document.querySelector("#form-login button[type=submit]").focus();
+      avisar("Datos de " + u.nombre + " (" + ROLES[u.rol] + ") completados. Presiona Enter para ingresar.");
+    });
+
+    $("ver-clave").addEventListener("click", function () {
+      var k = $("login-clave"), ver = k.type === "password";
+      k.type = ver ? "text" : "password";
+      this.firstChild.nodeValue = ver ? "Ocultar" : "Mostrar";
+      this.setAttribute("aria-pressed", String(ver));
+    });
+
+    $("form-login").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var correo = $("login-correo").value.trim(), clave = $("login-clave").value;
+      $("login-correo").dataset.tocado = "1";
+      var primero = aplicarErrores({
+        "login-correo": revisarCorreo(correo),
+        "login-clave": clave ? "" : "Escribe tu contraseña."
+      });
+      var err = $("login-error");
+      if (primero) { err.hidden = true; enfocarCampo(primero); return; }
+      var u = db.usuarios.find(function (x) { return x.correo.toLowerCase() === correo.toLowerCase() && x.clave === clave; });
+      if (!u) {
+        err.textContent = "Correo o contraseña incorrectos. Puedes usar una cuenta de demostración.";
+        err.hidden = false;
+        $("login-clave").focus(); $("login-clave").select();
+        return;
+      }
+      err.hidden = true;
+      try { localStorage.setItem(CLAVE_SESION, u.id); } catch (x) { /* sin almacenamiento */ }
+      iniciarSesion(u, true);
+    });
+
+    var VISTAS = {
+      alumno: [["cursos", "Cursos disponibles"], ["solicitud", "Nueva solicitud"], ["historial", "Historial"], ["progreso", "Mi progreso"]],
+      asesor: [["solicitudes", "Solicitudes"], ["gestion", "Mis cursos y horarios"], ["historial", "Historial"]]
+    };
+
+    function iniciarSesion(u, anunciar) {
+      actual = u;
+      $("usuario-nombre").textContent = u.nombre;
+      $("usuario-rol").textContent = ROLES[u.rol] + " · " + u.detalle;
+      $("subtitulo").textContent = u.rol === "alumno" ? "Solicita asesorías y revisa tu avance." : "Gestiona tus cursos, horarios y solicitudes.";
+      $("barra-usuario").hidden = false;
+      $("menu").hidden = false;
+      $("form-login").reset();
+      var kc = $("login-clave"); kc.type = "password";
+      $("ver-clave").firstChild.nodeValue = "Mostrar"; $("ver-clave").setAttribute("aria-pressed", "false");
+      pintarCorreo($("login-correo"), "", false);
+      delete $("login-correo").dataset.tocado;
+      // limpia formularios/filtros del usuario anterior
+      ["form-solicitud", "form-historial", "form-filtro-cursos", "form-curso", "form-horario"].forEach(function (id) { $(id).reset(); });
+      $("sol-conf").hidden = true;
+      var deseada = location.hash.replace("#", "");
+      var valida = VISTAS[u.rol].some(function (v) { return v[0] === deseada; });
+      mostrar(valida ? deseada : VISTAS[u.rol][0][0], { foco: true });
+      if (anunciar) avisar("Hola, " + u.nombre + ". Sesión iniciada como " + ROLES[u.rol] + ".");
+    }
+
+    $("btn-salir").addEventListener("click", function () {
+      var boton = this;
+      confirmar("¿Cerrar sesión?", "Tendrás que volver a ingresar tu correo y contraseña.", "Cerrar sesión").then(function (ok) {
+        if (!ok) { boton.focus(); return; }
+        var nombre = actual.nombre;
+        actual = null;
+        try { localStorage.removeItem(CLAVE_SESION); } catch (x) { /* nada */ }
+        $("barra-usuario").hidden = true;
+        $("menu").hidden = true;
+        $("subtitulo").textContent = "Inicia sesión para gestionar tus asesorías.";
+        if (history.replaceState) history.replaceState(null, "", location.pathname + location.search);
+        mostrar("login", {});
+        $("login-correo").focus();
+        avisar("Sesión de " + nombre + " cerrada correctamente.");
+      });
+    });
+
+    /* ---------- Menú y vistas ---------- */
+    var vistaActual = "login";
+
+    function renderMenu() {
+      var pendientes = actual.rol === "asesor" ? solicitudesAsesor().filter(function (d) { return d.s.estado === "pendiente"; }).length : 0;
+      $("menu-lista").innerHTML = VISTAS[actual.rol].map(function (v) {
+        var extra = v[0] === "solicitudes" && pendientes
+          ? '<span class="contador" aria-hidden="true">' + pendientes + '</span><span class="sr-only"> (' + pendientes + " pendientes)</span>" : "";
+        return '<li><button type="button" data-ir="' + v[0] + '"' + (v[0] === vistaActual ? ' aria-current="page"' : "") + ">" +
+          esc(v[1]) + extra + "</button></li>";
+      }).join("");
+    }
+    $("menu-lista").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ir]");
+      if (b) mostrar(b.dataset.ir, { foco: true });
+    });
+    // Flechas ← → / Inicio / Fin para moverse entre secciones del menú
+    $("menu-lista").addEventListener("keydown", function (e) {
+      var botones = Array.prototype.slice.call(this.querySelectorAll("button"));
+      var i = botones.indexOf(document.activeElement);
+      if (i === -1) return;
+      var destino = null;
+      if (e.key === "ArrowRight") destino = botones[(i + 1) % botones.length];
+      else if (e.key === "ArrowLeft") destino = botones[(i - 1 + botones.length) % botones.length];
+      else if (e.key === "Home") destino = botones[0];
+      else if (e.key === "End") destino = botones[botones.length - 1];
+      if (destino) { e.preventDefault(); destino.focus(); }
+    });
+
+    var RENDER = {
+      cursos: renderCursos, solicitud: prepararSolicitud, historial: renderHistorial,
+      progreso: renderProgreso, solicitudes: renderSolicitudesAsesor, gestion: renderGestion
+    };
+
+    function mostrar(vista, op) {
+      op = op || {};
+      vistaActual = vista;
+      document.querySelectorAll("section.vista").forEach(function (s) { s.hidden = s.dataset.vista !== vista; });
+      if (actual) {
+        renderMenu();
+        var activo = document.querySelector('#menu-lista [aria-current="page"]');
+        if (activo && activo.scrollIntoView) activo.scrollIntoView({ block: "nearest", inline: "nearest" });
+        if (history.replaceState) history.replaceState(null, "", "#" + vista);
+      }
+      if (RENDER[vista]) RENDER[vista](op);
+      var titulo = document.querySelector("#vista-" + vista + " h2");
+      document.title = (vista === "login" ? "Iniciar sesión" : titulo.textContent) + " · Portal de asesorías académicas";
+      if (op.foco && titulo) titulo.focus();
+    }
+
+    /* =====================================================================
+       6. ALUMNO: CURSOS DISPONIBLES
+       ===================================================================== */
+    opcionesAreas($("fc-area"), "Todas las áreas");
+    $("fc-area").addEventListener("change", function () { renderCursos({}); });
+
+    function renderCursos() {
+      var area = $("fc-area").value;
+      var lista = db.cursos.filter(function (c) { return !area || c.area === area; });
+      $("cursos-cuenta").textContent = lista.length + (lista.length === 1 ? " curso encontrado." : " cursos encontrados.");
+      if (!lista.length) { $("lista-cursos").innerHTML = '<li class="vacio">No hay cursos en esta área todavía.</li>'; return; }
+      $("lista-cursos").innerHTML = lista.map(function (c) {
+        var disp = horariosDisponibles(c.id, actual.id);
+        var prox = disp[0];
+        return '<li class="tarjeta"><h3>' + esc(c.nombre) + "</h3>" +
+          '<p><span class="etiqueta">' + esc(c.area) + "</span></p>" +
+          "<p><strong>Asesor:</strong> " + esc(usuario(c.asesorId).nombre) + "</p>" +
+          "<p><strong>Modalidad:</strong> " + c.modalidades.map(function (m) { return MODALIDAD[m]; }).join(" y ") + "</p>" +
+          "<p><strong>Próxima fecha:</strong> " + (prox ? esc(fFecha(prox.fecha) + " · " + prox.inicio + " – " + prox.fin) : "Sin horarios libres") + "</p>" +
+          "<p><strong>Horarios libres:</strong> " + disp.length + "</p>" +
+          '<div class="acciones-tarjeta"><button type="button" class="primario pequeno" data-solicitar="' + c.id + '"' +
+          (disp.length ? "" : " disabled") + '>Solicitar asesoría<span class="sr-only"> de ' + esc(c.nombre) + "</span></button></div></li>";
+      }).join("");
+    }
+    $("lista-cursos").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-solicitar]");
+      if (b) mostrar("solicitud", { cursoId: b.dataset.solicitar });
+    });
+
+    /* =====================================================================
+       7. ALUMNO: REGISTRAR SOLICITUD
+       ===================================================================== */
+    var fs = {
+      form: $("form-solicitud"), area: $("sol-area"), curso: $("sol-curso"),
+      fecha: $("sol-fecha"), horario: $("sol-horario"), tema: $("sol-tema"),
+      radios: document.querySelectorAll('#sol-modalidad input[name="modalidad"]')
+    };
+    opcionesAreas(fs.area, "Selecciona un área");
+
+    function prepararSolicitud(op) {
+      if (op.cursoId) {
+        $("sol-conf").hidden = true;
+        var c = curso(op.cursoId);
+        fs.area.value = c.area; alCambiarArea();
+        fs.curso.value = c.id; alCambiarCurso();
+        var r = Array.prototype.find.call(fs.radios, function (x) { return !x.disabled; });
+        if (r) r.focus();
+        avisar("Curso " + c.nombre + " seleccionado. Elige la modalidad y un horario.");
+      } else if (!fs.area.value) {
+        reiniciarDependientes("area");
+      } else {
+        // refresca la disponibilidad conservando lo elegido
+        var cursoElegido = fs.curso.value, mod = modalidadElegida(), fechaElegida = fs.fecha.value, horaElegida = fs.horario.value;
+        alCambiarArea(); fs.curso.value = cursoElegido; alCambiarCurso();
+        fs.radios.forEach(function (x) { if (x.value === mod && !x.disabled) x.checked = true; });
+        fs.fecha.value = fechaElegida; alCambiarFecha(); fs.horario.value = horaElegida; actualizarResumen();
+      }
+    }
+
+    function reiniciarDependientes(desde) {
+      if (desde === "area") {
+        fs.curso.innerHTML = '<option value="">Primero elige un área</option>'; fs.curso.disabled = true;
+      }
+      if (desde === "area" || desde === "curso") {
+        fs.radios.forEach(function (r) { r.checked = false; r.disabled = true; });
+        $("sol-lugar").textContent = "Elige un curso"; $("sol-enlace").textContent = "Elige un curso";
+        fs.fecha.innerHTML = '<option value="">Primero elige un curso</option>'; fs.fecha.disabled = true;
+      }
+      fs.horario.innerHTML = '<option value="">Primero elige una fecha</option>'; fs.horario.disabled = true;
+      actualizarResumen();
+    }
+
+    function alCambiarArea() {
+      reiniciarDependientes("area");
+      if (!fs.area.value) return;
+      var cursos = db.cursos.filter(function (c) { return c.area === fs.area.value; });
+      fs.curso.innerHTML = '<option value="">' + (cursos.length ? "Selecciona un curso" : "No hay cursos en esta área") + "</option>" +
+        cursos.map(function (c) {
+          var n = horariosDisponibles(c.id, actual.id).length;
+          return '<option value="' + c.id + '"' + (n ? "" : " disabled") + ">" + esc(c.nombre) + " — " +
+            esc(usuario(c.asesorId).nombre) + (n ? "" : " (sin horarios libres)") + "</option>";
+        }).join("");
+      fs.curso.disabled = !cursos.length;
+    }
+
+    function alCambiarCurso() {
+      reiniciarDependientes("curso");
+      var c = curso(fs.curso.value);
+      if (!c) return;
+      fs.radios.forEach(function (r) {
+        var ofrece = c.modalidades.indexOf(r.value) !== -1;
+        r.disabled = !ofrece;
+        r.checked = ofrece && c.modalidades.length === 1;
+      });
+      $("sol-lugar").textContent = c.modalidades.indexOf("presencial") !== -1 ? c.lugar : "No disponible en este curso";
+      $("sol-enlace").textContent = c.modalidades.indexOf("virtual") !== -1 ? c.enlace : "No disponible en este curso";
+      var disp = horariosDisponibles(c.id, actual.id);
+      var fechas = [];
+      disp.forEach(function (h) { if (fechas.indexOf(h.fecha) === -1) fechas.push(h.fecha); });
+      fs.fecha.innerHTML = '<option value="">Selecciona una fecha (' + fechas.length + " disponibles)</option>" +
+        fechas.map(function (f) { return '<option value="' + f + '">' + esc(fFecha(f)) + "</option>"; }).join("");
+      fs.fecha.disabled = !fechas.length;
+      actualizarResumen();
+    }
+
+    function alCambiarFecha() {
+      fs.horario.innerHTML = '<option value="">Primero elige una fecha</option>'; fs.horario.disabled = true;
+      if (!fs.fecha.value) { actualizarResumen(); return; }
+      var hs = horariosDisponibles(fs.curso.value, actual.id).filter(function (h) { return h.fecha === fs.fecha.value; });
+      fs.horario.innerHTML = '<option value="">Selecciona un horario</option>' + hs.map(function (h) {
+        var libres = h.cupos - ocupados(h.id);
+        return '<option value="' + h.id + '">' + h.inicio + " – " + h.fin + " · " + libres + (libres === 1 ? " cupo libre" : " cupos libres") + "</option>";
+      }).join("");
+      fs.horario.disabled = false;
+      if (hs.length === 1) fs.horario.value = hs[0].id;
+      actualizarResumen();
+    }
+
+    function modalidadElegida() {
+      var r = Array.prototype.find.call(fs.radios, function (x) { return x.checked; });
+      return r ? r.value : "";
+    }
+
+    function actualizarResumen() {
+      var c = curso(fs.curso.value), h = horario(fs.horario.value), m = modalidadElegida();
+      var res = $("sol-resumen");
+      if (!c) { res.innerHTML = ""; return; }
+      res.innerHTML = "<strong>Resumen:</strong> " + esc(c.nombre) + " con " + esc(usuario(c.asesorId).nombre) +
+        (m ? " · " + MODALIDAD[m] + " (" + esc(m === "presencial" ? c.lugar : c.enlace) + ")" : "") +
+        (h ? " · " + esc(fFechaLarga(h.fecha)) + ", " + h.inicio + " – " + h.fin : "");
+    }
+
+    fs.area.addEventListener("change", alCambiarArea);
+    fs.curso.addEventListener("change", alCambiarCurso);
+    fs.fecha.addEventListener("change", alCambiarFecha);
+    fs.horario.addEventListener("change", actualizarResumen);
+    fs.radios.forEach(function (r) { r.addEventListener("change", actualizarResumen); });
+    fs.form.addEventListener("reset", function () {
+      setTimeout(function () {
+        reiniciarDependientes("area");
+        aplicarErrores({ "sol-area": "", "sol-curso": "", "sol-modalidad": "", "sol-fecha": "", "sol-horario": "", "sol-tema": "" });
+      });
+    });
+    fs.form.querySelector("button[type=reset]").addEventListener("click", function () {
+      $("sol-conf").hidden = true;
+      setTimeout(function () { fs.area.focus(); });
+    });
+
+    fs.form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var tema = fs.tema.value.trim();
+      var errores = {
+        "sol-area": fs.area.value ? "" : "Selecciona un área académica.",
+        "sol-curso": fs.curso.value ? "" : (fs.curso.disabled ? "Primero elige un área con cursos." : "Selecciona un curso."),
+        "sol-modalidad": modalidadElegida() ? "" : "Elige presencial o virtual.",
+        "sol-fecha": fs.fecha.value ? "" : "Selecciona una fecha disponible.",
+        "sol-horario": fs.horario.value ? "" : "Selecciona un horario disponible.",
+        "sol-tema": !tema ? "Cuéntale al asesor qué necesitas repasar." : tema.length < 10 ? "Escribe al menos 10 caracteres." : ""
+      };
+      // Revalida disponibilidad (otro alumno pudo ocupar el último cupo)
+      var h = horario(fs.horario.value);
+      if (h && (ocupados(h.id) >= h.cupos || !esFuturo(h))) errores["sol-horario"] = "Este horario ya no está disponible. Elige otro.";
+      var primero = aplicarErrores(errores);
+      var conf = $("sol-conf");
+      if (primero) {
+        conf.className = "mensaje fallo"; conf.hidden = false;
+        var n = Object.keys(errores).filter(function (k) { return errores[k]; }).length;
+        conf.textContent = "Revisa " + (n === 1 ? "el campo marcado" : "los " + n + " campos marcados") + " antes de enviar.";
+        enfocarCampo(primero);
+        return;
+      }
+      var c = curso(h.cursoId);
+      db.solicitudes.push({ id: nuevoId("s"), alumnoId: actual.id, horarioId: h.id, modalidad: modalidadElegida(),
+                            tema: tema, estado: "pendiente", nota: null, comentario: "" });
+      guardar();
+      fs.form.reset();
+      conf.className = "mensaje"; conf.hidden = false;
+      conf.innerHTML = "✓ Solicitud registrada: " + esc(c.nombre) + ", " + esc(fFechaLarga(h.fecha)) + " de " + h.inicio +
+        " a " + h.fin + ". Queda <strong>pendiente</strong> hasta que " + esc(usuario(c.asesorId).nombre) +
+        ' la acepte. <button type="button" class="secundario pequeno" data-ir-historial>Ver en mi historial</button>';
+      conf.focus();
+    });
+    $("sol-conf").addEventListener("click", function (e) {
+      if (e.target.closest("[data-ir-historial]")) mostrar("historial", { foco: true });
+    });
+
+    /* =====================================================================
+       8. HISTORIAL DE ASESORÍAS (alumno y asesor)
+       ===================================================================== */
+    document.querySelectorAll('input[name="hist-ver"]').forEach(function (r) {
+      r.addEventListener("change", function () { renderHistorial({ anunciar: true }); });
+    });
+    var GRUPOS = {
+      proximas: ["pendiente", "aceptada"],
+      completadas: ["completada"],
+      otras: ["rechazada", "cancelada", "ausente"]
+    };
+    var fmtDia = new Intl.DateTimeFormat("es-PE", { day: "numeric" });
+    var fmtMes = new Intl.DateTimeFormat("es-PE", { month: "short" });
+    var fmtSemana = new Intl.DateTimeFormat("es-PE", { weekday: "long" });
+
+    function solicitudesAlumno() {
+      return db.solicitudes.filter(function (s) { return s.alumnoId === actual.id; }).map(detalle).filter(function (d) { return d.h && d.c; });
+    }
+    function solicitudesAsesor() {
+      return db.solicitudes.map(detalle).filter(function (d) { return d.h && d.c && d.c.asesorId === actual.id; });
+    }
+    function ordenar(lista, asc) {
+      return lista.sort(function (a, b) {
+        var k = (a.h.fecha + a.h.inicio).localeCompare(b.h.fecha + b.h.inicio);
+        return asc ? k : -k;
+      });
+    }
+
+    function renderHistorial(op) {
+      var esAlumno = actual.rol === "alumno";
+      $("historial-intro").textContent = esAlumno ? "Tus asesorías: primero las próximas, luego las pasadas." : "Asesorías de tus cursos: primero las próximas, luego las pasadas.";
+      var todas = esAlumno ? solicitudesAlumno() : solicitudesAsesor();
+      // contador en cada pestaña
+      document.querySelectorAll('input[name="hist-ver"]').forEach(function (r) {
+        var n = r.value === "todas" ? todas.length : todas.filter(function (d) { return GRUPOS[r.value].indexOf(d.s.estado) !== -1; }).length;
+        var span = r.nextElementSibling;
+        span.innerHTML = span.textContent.replace(/\s*\(\d+\)$/, "") + ' <span class="cuenta-seg">(' + n + ")</span>";
+      });
+      var ver = document.querySelector('input[name="hist-ver"]:checked').value;
+      var lista = todas.filter(function (d) { return ver === "todas" || GRUPOS[ver].indexOf(d.s.estado) !== -1; });
+      // próximas (más cercana primero) y luego pasadas (más reciente primero)
+      var prox = ordenar(lista.filter(function (d) { return GRUPOS.proximas.indexOf(d.s.estado) !== -1; }), true);
+      var resto = ordenar(lista.filter(function (d) { return GRUPOS.proximas.indexOf(d.s.estado) === -1; }), false);
+      lista = prox.concat(resto);
+      if (op && op.anunciar) avisar(lista.length + (lista.length === 1 ? " asesoría." : " asesorías."));
+      var cont = $("historial-contenido");
+      if (!lista.length) { cont.innerHTML = '<li class="vacio">No hay asesorías en esta lista.</li>'; return; }
+      cont.innerHTML = lista.map(function (d) {
+        var f = fechaLocal(d.h.fecha);
+        var p = esAlumno ? d.asesor : d.alumno;
+        var cancelable = esAlumno && GRUPOS.proximas.indexOf(d.s.estado) !== -1 && esFuturo(d.h);
+        var nota = d.s.nota != null ? '<span class="h-nota">' + d.s.nota + '<small>/20</small><span class="sr-only"> de nota</span></span>' : "";
+        return '<li class="h-item">' +
+          '<div class="h-fecha" aria-hidden="true"><span>' + fmtDia.format(f) + "</span>" + esc(fmtMes.format(f).replace(".", "")) + "</div>" +
+          '<div class="h-info"><strong>' + esc(d.c.nombre) + "</strong>" +
+          "<span>" + esc(fmtSemana.format(f)) + '<span class="sr-only"> ' + fmtDia.format(f) + " de " + esc(fmtMes.format(f)) + "</span> · " + d.h.inicio + " – " + d.h.fin + "</span></div>" +
+          '<div class="h-estado">' + nota + badge(d.s.estado) + "</div>" +
+          '<details class="h-detalle"><summary>Ver detalle<span class="sr-only"> de ' + esc(d.c.nombre) + "</span></summary><dl>" +
+          "<dt>" + (esAlumno ? "Asesor" : "Alumno") + "</dt><dd>" + esc(p ? p.nombre : "—") + "</dd>" +
+          "<dt>Modalidad</dt><dd>" + MODALIDAD[d.s.modalidad] + "</dd>" +
+          "<dt>Tema</dt><dd>" + esc(d.s.tema) + "</dd>" +
+          (d.s.comentario ? "<dt>Comentario</dt><dd>" + esc(d.s.comentario) + "</dd>" : "") +
+          "</dl>" +
+          (cancelable ? '<button type="button" class="secundario pequeno" data-cancelar="' + d.s.id + '">Cancelar asesoría</button>' : "") +
+          "</details></li>";
+      }).join("");
+    }
+
+    $("historial-contenido").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-cancelar]");
+      if (!b) return;
+      var d = detalle(porId(db.solicitudes, b.dataset.cancelar));
+      confirmar("¿Cancelar esta asesoría?", d.c.nombre + " — " + fFechaLarga(d.h.fecha) + ", " + d.h.inicio + ". El cupo quedará libre para otro alumno.", "Sí, cancelar")
+        .then(function (ok) {
+          if (!ok) { b.focus(); return; }
+          d.s.estado = "cancelada"; guardar();
+          renderHistorial({});
+          $("t-historial").focus();
+          avisar("Asesoría de " + d.c.nombre + " cancelada.");
+        });
+    });
+
+    /* =====================================================================
+       9. ALUMNO: PROGRESO ACADÉMICO
+       ===================================================================== */
+    function nivel(prom) {
+      if (prom == null) return { c: "nivel-nada", t: "Sin asesorías completadas" };
+      if (prom >= 15) return { c: "nivel-alto", t: "▲ Buen avance" };
+      if (prom >= 11) return { c: "nivel-medio", t: "● Avance regular" };
+      return { c: "nivel-bajo", t: "▼ Necesita reforzar" };
+    }
+    function promedio(arr) { return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) / arr.length : null; }
+    function tile(valor, unidad, rotulo) {
+      return '<div class="tile"><span class="valor">' + valor + (unidad ? "<small>" + unidad + "</small>" : "") +
+        '</span><span class="rotulo">' + rotulo + "</span></div>";
+    }
+
+    function renderProgreso() {
+      var todas = solicitudesAlumno();
+      var comp = todas.filter(function (d) { return d.s.estado === "completada"; });
+      var notas = comp.filter(function (d) { return d.s.nota != null; }).map(function (d) { return d.s.nota; });
+      var horas = comp.reduce(function (t, d) { return t + (minutos(d.h.fin) - minutos(d.h.inicio)) / 60; }, 0);
+      var proximas = todas.filter(function (d) { return (d.s.estado === "pendiente" || d.s.estado === "aceptada") && esFuturo(d.h); });
+      var prom = promedio(notas);
+      var ordenNotas = ordenar(comp.slice(), true).filter(function (d) { return d.s.nota != null; });
+      var tendencia = "";
+      if (ordenNotas.length >= 2) {
+        var dif = ordenNotas[ordenNotas.length - 1].s.nota - ordenNotas[0].s.nota;
+        tendencia = dif > 0 ? "▲ +" + dif + " puntos desde tu primera asesoría"
+          : dif < 0 ? "▼ " + dif + " puntos desde tu primera asesoría" : "Sin cambio desde tu primera asesoría";
+      }
+
+      var html = '<div class="tiles">' +
+        tile(comp.length, "", "Asesorías completadas") +
+        tile(horas.toLocaleString("es-PE", { maximumFractionDigits: 1 }), " h", "Horas de asesoría") +
+        tile(prom == null ? "—" : prom.toFixed(1), prom == null ? "" : " /20", "Nota promedio de avance" + (tendencia ? "<br><small>" + tendencia + "</small>" : "")) +
+        tile(proximas.length, "", "Próximas o pendientes") +
+        "</div>";
+
+      html += '<div class="dos-columnas"><div class="panel"><h3 id="t-avance-area">Avance por área académica</h3>' +
+        '<p class="intro">Meta sugerida: ' + META_POR_AREA + " asesorías completadas por área en el ciclo.</p>" +
+        '<ul class="areas-progreso" aria-labelledby="t-avance-area">' +
+        AREAS.map(function (a, i) {
+          var deArea = comp.filter(function (d) { return d.c.area === a; });
+          var p = promedio(deArea.filter(function (d) { return d.s.nota != null; }).map(function (d) { return d.s.nota; }));
+          var n = nivel(p), hechas = Math.min(deArea.length, META_POR_AREA);
+          return '<li class="area-fila"><div class="area-cabecera"><strong id="pa-' + i + '">' + esc(a) + "</strong>" +
+            "<span>" + deArea.length + " de " + META_POR_AREA + " asesorías" + (p == null ? "" : " · promedio " + p.toFixed(1)) + "</span></div>" +
+            '<progress max="' + META_POR_AREA + '" value="' + hechas + '" aria-labelledby="pa-' + i + '" aria-describedby="pn-' + i + '">' +
+            hechas + " de " + META_POR_AREA + "</progress>" +
+            '<span class="nivel ' + n.c + '" id="pn-' + i + '">' + n.t + "</span></li>";
+        }).join("") + "</ul></div>";
+
+      html += '<div class="panel"><h3>Últimos resultados</h3>';
+      var ultimos = ordenar(comp.slice(), false).slice(0, 5);
+      html += ultimos.length
+        ? '<ul class="resultados">' + ultimos.map(function (d) {
+            return "<li><div><strong>" + esc(d.c.nombre) + "</strong><br><small>" + esc(fFecha(d.h.fecha)) + " · " + esc(d.asesor.nombre) +
+              '</small></div><span class="nota">' + (d.s.nota != null ? d.s.nota + '<span class="sr-only"> de 20</span>' : "—") + "</span>" +
+              (d.s.comentario ? "<p>“" + esc(d.s.comentario) + "”</p>" : "") + "</li>";
+          }).join("") + "</ul>"
+        : '<p class="vacio">Aún no tienes asesorías completadas.<br><button type="button" class="primario pequeno" data-ir-cursos>Ver cursos disponibles</button></p>';
+      html += "</div></div>";
+      $("progreso-contenido").innerHTML = html;
+    }
+    $("progreso-contenido").addEventListener("click", function (e) {
+      if (e.target.closest("[data-ir-cursos]")) mostrar("cursos", { foco: true });
+    });
+
+    /* =====================================================================
+       10. ASESOR: SOLICITUDES (aceptar, rechazar, registrar resultado)
+       ===================================================================== */
+    function renderSolicitudesAsesor() {
+      var todas = solicitudesAsesor();
+      var pend = ordenar(todas.filter(function (d) { return d.s.estado === "pendiente"; }), true);
+      var acep = ordenar(todas.filter(function (d) { return d.s.estado === "aceptada"; }), true);
+      var comp = todas.filter(function (d) { return d.s.estado === "completada"; });
+      var alumnos = {}; comp.forEach(function (d) { alumnos[d.s.alumnoId] = 1; });
+
+      var html = '<div class="tiles">' +
+        tile(pend.length, "", "Pendientes de respuesta") + tile(acep.length, "", "Aceptadas por realizar") +
+        tile(comp.length, "", "Asesorías completadas") + tile(Object.keys(alumnos).length, "", "Alumnos atendidos") + "</div>";
+
+      html += '<div class="bloque"><h3 id="t-pendientes" tabindex="-1">Pendientes de respuesta</h3>' +
+        (pend.length ? '<ul class="rejilla">' + pend.map(function (d) { return tarjetaSolicitud(d, "pendiente"); }).join("") + "</ul>"
+          : '<p class="vacio">No tienes solicitudes pendientes.</p>') + "</div>";
+      html += '<div class="bloque"><h3 id="t-aceptadas" tabindex="-1">Aceptadas: registrar resultado</h3>' +
+        (acep.length ? '<ul class="rejilla">' + acep.map(function (d) { return tarjetaSolicitud(d, "aceptada"); }).join("") + "</ul>"
+          : '<p class="vacio">No hay asesorías aceptadas por realizar.</p>') + "</div>";
+      $("solicitudes-contenido").innerHTML = html;
+    }
+
+    function tarjetaSolicitud(d, tipo) {
+      var titulo = esc(d.alumno.nombre) + " — " + esc(d.c.nombre);
+      var acciones = tipo === "pendiente"
+        ? '<button type="button" class="primario pequeno" data-aceptar="' + d.s.id + '">Aceptar<span class="sr-only"> solicitud de ' + titulo + "</span></button>" +
+          '<button type="button" class="secundario pequeno" data-rechazar="' + d.s.id + '">Rechazar<span class="sr-only"> solicitud de ' + titulo + "</span></button>"
+        : '<button type="button" class="primario pequeno" data-resultado="' + d.s.id + '">Registrar resultado<span class="sr-only"> de ' + titulo + "</span></button>";
+      return '<li class="tarjeta solicitud-card ' + tipo + '"><h4>' + esc(d.alumno.nombre) + "</h4>" +
+        "<p>" + esc(d.c.nombre) + ' <span class="etiqueta">' + esc(d.c.area) + "</span></p>" +
+        "<p><strong>Fecha:</strong> " + esc(fFecha(d.h.fecha)) + " · " + d.h.inicio + " – " + d.h.fin + "</p>" +
+        "<p><strong>Modalidad:</strong> " + MODALIDAD[d.s.modalidad] + "</p>" +
+        '<p class="tema"><strong>Tema:</strong> ' + esc(d.s.tema) + "</p>" +
+        '<div class="acciones-tarjeta">' + acciones + "</div></li>";
+    }
+
+    $("solicitudes-contenido").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.aceptar) {
+        var d = detalle(porId(db.solicitudes, b.dataset.aceptar));
+        d.s.estado = "aceptada"; guardar(); renderSolicitudesAsesor(); renderMenu();
+        $("t-pendientes").focus();
+        avisar("Solicitud de " + d.alumno.nombre + " aceptada. Ahora aparece en “Aceptadas”.");
+      } else if (b.dataset.rechazar) {
+        var r = detalle(porId(db.solicitudes, b.dataset.rechazar));
+        confirmar("¿Rechazar la solicitud?", r.alumno.nombre + " — " + r.c.nombre + ", " + fFechaLarga(r.h.fecha) + ".", "Rechazar").then(function (ok) {
+          if (!ok) { b.focus(); return; }
+          r.s.estado = "rechazada"; r.s.comentario = "Rechazada por el asesor. Elige otro horario disponible.";
+          guardar(); renderSolicitudesAsesor(); renderMenu();
+          $("t-pendientes").focus();
+          avisar("Solicitud de " + r.alumno.nombre + " rechazada.");
+        });
+      } else if (b.dataset.resultado) {
+        abrirResultado(b.dataset.resultado);
+      }
+    });
+
+    var solicitudEnResultado = null;
+    function abrirResultado(id) {
+      var d = detalle(porId(db.solicitudes, id));
+      solicitudEnResultado = d;
+      $("form-resultado").reset();
+      $("res-nota").disabled = false;
+      aplicarErrores({ "res-nota": "" });
+      $("dlg-resultado-detalle").textContent = d.alumno.nombre + " · " + d.c.nombre + " · " + fFechaLarga(d.h.fecha) + ", " + d.h.inicio;
+      $("dlg-resultado").showModal();
+      document.querySelector('#res-asistencia input[value="si"]').focus();
+    }
+    document.querySelectorAll("#res-asistencia input").forEach(function (r) {
+      r.addEventListener("change", function () {
+        var asistio = document.querySelector('#res-asistencia input[value="si"]').checked;
+        $("res-nota").disabled = !asistio;
+        if (!asistio) { $("res-nota").value = ""; marcar("res-nota", ""); }
+      });
+    });
+    $("res-cancelar").addEventListener("click", function () { $("dlg-resultado").close(); });
+    $("form-resultado").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var asistio = document.querySelector('#res-asistencia input[value="si"]').checked;
+      var notaTxt = $("res-nota").value, nota = Number(notaTxt);
+      var err = "";
+      if (asistio) {
+        if (notaTxt === "") err = "Escribe una nota de 0 a 20.";
+        else if (!Number.isInteger(nota) || nota < 0 || nota > 20) err = "La nota debe ser un número entero entre 0 y 20.";
+      }
+      var primero = aplicarErrores({ "res-nota": err });
+      if (primero) { primero.focus(); return; }
+      var d = solicitudEnResultado;
+      d.s.estado = asistio ? "completada" : "ausente";
+      d.s.nota = asistio ? nota : null;
+      d.s.comentario = $("res-comentario").value.trim() || (asistio ? "" : "El alumno no se presentó.");
+      guardar();
+      $("dlg-resultado").close();
+      renderSolicitudesAsesor();
+      $("t-aceptadas").focus();
+      avisar("Resultado guardado para " + d.alumno.nombre + (asistio ? ": " + nota + "/20." : ": no asistió."));
+    });
+
+    /* =====================================================================
+       11. ASESOR: CREAR CURSOS Y PROGRAMAR FECHA / HORA
+       ===================================================================== */
+    // El asesor solo puede crear cursos en sus propias áreas
+    function prepararAreasAsesor() {
+      var mias = actual.areas && actual.areas.length ? actual.areas : AREAS;
+      var sel = $("gc-area");
+      sel.innerHTML = (mias.length > 1 ? '<option value="">Selecciona un área</option>' : "") +
+        mias.map(function (a) { return '<option value="' + esc(a) + '">' + esc(a) + "</option>"; }).join("");
+    }
+
+    (function opcionesHora() {
+      var html = '<option value="">Elige la hora</option>';
+      for (var m = 7 * 60; m <= 21 * 60; m += 30) {
+        var t = pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+        html += '<option value="' + t + '">' + t + "</option>";
+      }
+      $("gh-inicio").innerHTML = html;
+    })();
+    function sumarMinutos(t, n) { var m = minutos(t) + n; return pad(Math.floor(m / 60)) + ":" + pad(m % 60); }
+
+    function renderGestion(op) {
+      if (!$("gc-area").options.length || $("gc-area").dataset.asesor !== actual.id) {
+        prepararAreasAsesor(); $("gc-area").dataset.asesor = actual.id;
+      }
+      var mios = db.cursos.filter(function (c) { return c.asesorId === actual.id; });
+      var sel = $("gh-curso"), previo = sel.value;
+      sel.innerHTML = '<option value="">' + (mios.length ? "Selecciona un curso" : "Primero crea un curso") + "</option>" +
+        mios.map(function (c) { return '<option value="' + c.id + '">' + esc(c.nombre) + " (" + esc(c.area) + ")</option>"; }).join("");
+      sel.value = op && op.cursoId ? op.cursoId : previo;
+      $("gh-fecha").min = dia(0);
+      if (mios.length === 1) sel.value = mios[0].id;
+
+      $("lista-mis-cursos").innerHTML = mios.length ? mios.map(function (c) {
+        var hs = db.horarios.filter(function (h) { return h.cursoId === c.id; });
+        var futuros = hs.filter(esFuturo).sort(function (a, b) { return (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio); });
+        return '<li class="tarjeta"><h4>' + esc(c.nombre) + "</h4>" +
+          '<p><span class="etiqueta">' + esc(c.area) + "</span></p>" +
+          "<p><strong>Modalidad:</strong> " + c.modalidades.map(function (m) {
+            return MODALIDAD[m] + " (" + esc(m === "presencial" ? c.lugar : c.enlace) + ")";
+          }).join(" · ") + "</p>" +
+          "<p><strong>Horarios próximos:</strong> " + futuros.length + " · <strong>Pasados:</strong> " + (hs.length - futuros.length) + "</p>" +
+          (futuros.length ? '<ul class="horarios">' + futuros.map(function (h) {
+            var oc = ocupados(h.id);
+            var usado = db.solicitudes.some(function (s) { return s.horarioId === h.id; });
+            return "<li><span>" + esc(fFecha(h.fecha)) + " · " + h.inicio + "–" + h.fin + " · <strong>" + oc + "/" + h.cupos + "</strong> cupos</span>" +
+              (usado ? "" : '<button type="button" class="secundario pequeno" data-borrar-horario="' + h.id + '">Eliminar<span class="sr-only"> horario del ' +
+                esc(fFecha(h.fecha)) + " a las " + h.inicio + "</span></button>") + "</li>";
+          }).join("") + "</ul>" : "") +
+          '<div class="acciones-tarjeta"><button type="button" class="secundario pequeno" data-programar="' + c.id + '">Programar horario<span class="sr-only"> para ' +
+          esc(c.nombre) + "</span></button></div></li>";
+      }).join("") : '<li class="vacio">Aún no creaste cursos. Usa el formulario “Crear curso”.</li>';
+    }
+
+    $("lista-mis-cursos").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.programar) {
+        $("gh-curso").value = b.dataset.programar;
+        marcar("gh-curso", "");
+        $("gh-fecha").focus();
+        avisar("Curso seleccionado. Elige la fecha y la hora.");
+      } else if (b.dataset.borrarHorario) {
+        var h = horario(b.dataset.borrarHorario);
+        confirmar("¿Eliminar este horario?", fFechaLarga(h.fecha) + ", " + h.inicio + " – " + h.fin + ".", "Eliminar").then(function (ok) {
+          if (!ok) { b.focus(); return; }
+          db.horarios = db.horarios.filter(function (x) { return x.id !== h.id; });
+          guardar(); renderGestion({});
+          $("t-mis-cursos").focus();
+          avisar("Horario eliminado.");
+        });
+      }
+    });
+
+    $("form-curso").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var area = $("gc-area").value, nombre = $("gc-nombre").value.trim();
+      var mods = Array.prototype.filter.call(document.querySelectorAll('input[name="gc-mod"]'), function (c) { return c.checked; })
+        .map(function (c) { return c.value; });
+      var lugar = $("gc-lugar").value.trim(), enlace = $("gc-enlace").value.trim();
+      var repetido = db.cursos.some(function (c) { return c.asesorId === actual.id && c.nombre.toLowerCase() === nombre.toLowerCase(); });
+      var primero = aplicarErrores({
+        "gc-area": area ? "" : "Selecciona el área académica.",
+        "gc-nombre": !nombre ? "Escribe el nombre del curso." : nombre.length < 3 ? "Usa al menos 3 caracteres." : repetido ? "Ya tienes un curso con ese nombre." : "",
+        "gc-modalidades": mods.length ? "" : "Marca al menos una modalidad.",
+        "gc-lugar": mods.indexOf("presencial") !== -1 && !lugar ? "Indica el aula para la modalidad presencial." : "",
+        "gc-enlace": mods.indexOf("virtual") !== -1 && !enlace ? "Indica la plataforma o enlace para la modalidad virtual." : ""
+      });
+      if (primero) { enfocarCampo(primero); return; }
+      var c = { id: nuevoId("c"), asesorId: actual.id, area: area, nombre: nombre, modalidades: mods,
+                lugar: mods.indexOf("presencial") !== -1 ? lugar : "", enlace: mods.indexOf("virtual") !== -1 ? enlace : "" };
+      db.cursos.push(c); guardar();
+      this.reset();
+      renderGestion({ cursoId: c.id });
+      marcar("gh-curso", "");
+      $("gh-fecha").focus();
+      avisar("Curso “" + nombre + "” creado. Ahora prográmale una fecha y hora.");
+    });
+
+    $("form-horario").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var cId = $("gh-curso").value, fecha = $("gh-fecha").value, ini = $("gh-inicio").value;
+      var dur = Number(document.querySelector('input[name="gh-dur"]:checked').value);
+      var fin = ini ? sumarMinutos(ini, dur) : "";
+      var errores = {
+        "gh-curso": cId ? "" : "Selecciona uno de tus cursos.",
+        "gh-fecha": !fecha ? "Elige la fecha." : fecha < dia(0) ? "La fecha no puede ser anterior a hoy." : "",
+        "gh-inicio": ini ? "" : "Elige la hora."
+      };
+      if (!errores["gh-fecha"] && !errores["gh-inicio"] && fecha === dia(0) && !esFuturo({ fecha: fecha, inicio: ini }))
+        errores["gh-inicio"] = "Esa hora ya pasó hoy.";
+      if (!errores["gh-fecha"] && !errores["gh-inicio"]) {
+        var cruce = db.horarios.find(function (h) {
+          var c = curso(h.cursoId);
+          return c && c.asesorId === actual.id && h.fecha === fecha &&
+            minutos(ini) < minutos(h.fin) && minutos(fin) > minutos(h.inicio);
+        });
+        if (cruce) errores["gh-inicio"] = "Ya tienes otro horario a esa hora (" + cruce.inicio + " – " + cruce.fin + ").";
+      }
+      var primero = aplicarErrores(errores);
+      if (primero) { enfocarCampo(primero); return; }
+      db.horarios.push({ id: nuevoId("h"), cursoId: cId, fecha: fecha, inicio: ini, fin: fin, cupos: 3 });
+      guardar();
+      var c = curso(cId);
+      $("gh-fecha").value = ""; $("gh-inicio").value = "";
+      renderGestion({ cursoId: cId });
+      $("gh-fecha").focus();
+      avisar("Horario programado para " + c.nombre + ": " + fFechaLarga(fecha) + ", " + ini + " – " + fin + ".");
+    });
+
+    /* =====================================================================
+       12. ARRANQUE
+       ===================================================================== */
+    $("btn-reiniciar").addEventListener("click", function () {
+      confirmar("¿Restablecer los datos de demostración?", "Se borrarán los cursos, horarios y solicitudes que creaste y se cerrará la sesión.", "Restablecer")
+        .then(function (ok) {
+          if (!ok) return;
+          db = semilla(); guardar();
+          try { localStorage.removeItem(CLAVE_SESION); } catch (x) { /* nada */ }
+          location.replace(location.pathname + location.search);
+        });
+    });
+
+    renderCuentasDemo();
+    var sesion = null;
+    try { sesion = usuario(localStorage.getItem(CLAVE_SESION)); } catch (x) { /* nada */ }
+    if (sesion) iniciarSesion(sesion, false);
+    else mostrar("login", {});
+  })();
+  </script>
+</body>
+</html>
